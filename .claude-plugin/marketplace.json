@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "wppesmap",
+  "owner": {
+    "name": "WPP ESMAP"
+  },
+  "description": "WPP ESMAP agents and tools.",
+  "plugins": [
+    {
+      "name": "manolo-agent",
+      "source": "./plugins/manolo-agent",
+      "description": "Opinionated Adobe Experience Platform practitioner for the IKEA account."
+    }
+  ]
+}
