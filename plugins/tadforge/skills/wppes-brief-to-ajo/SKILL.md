@@ -5,4 +5,4 @@ description: Build draft AEP or Adobe Journey Optimizer campaigns and journeys f
 
 # Brief to AJO
 
-Use [`references/brief-to-ajo.md`](references/brief-to-ajo.md). Read source files from `.ao/uploads`, create email content with `tadforge-create-email-content`, and use the existing AEP tools for audiences, campaigns, journeys, and campaign duplication. Create drafts only; never activate or publish a campaign or journey.
+Use [`references/brief-to-ajo.md`](references/brief-to-ajo.md). Read source files from `.ao/uploads`, upload each referenced image separately with `tadforge-upload-email-image`, then create email content with `tadforge-create-content-template`. Use the existing AEP tools for audiences, campaigns, journeys, and campaign duplication. Create drafts only; never activate or publish a campaign or journey.

@@ -69,122 +69,50 @@ For each HTML file:
 
 1. Read the complete HTML as text.
 2. Identify only the unsuffixed images referenced by that HTML.
-3. Use one Python `execute_code` call to upload the images individually through the Tadforge HTTP API.
-4. Keep the returned `{ fileName, publishUrl }` mappings in the same Python execution.
-5. Call the final email-content endpoint with the HTML and those mappings.
-6. Record the exact returned `{ briefName, contentTemplateId }`.
+3. For each referenced image, read and Base64-encode only that image with Python.
+4. Immediately call `tadforge-upload-email-image` with that one image.
+5. Record each returned `sourceFileName` and `publishUrl` in a substitutions object.
+6. Call `tadforge-create-content-template` with the HTML and the JSON-serialized substitutions object.
+7. Record the exact returned `{ briefName, contentTemplateId }`.
 
-Do not build one MCP payload containing all image Base64 values. The code execution environment cannot transfer large Python variables into a direct MCP tool invocation without serializing them through the model context.
+Do not build one MCP payload containing all image Base64 values. Never call the removed `tadforge-create-email-content` tool. Process and upload one image at a time so each MCP call contains at most one Base64 value.
 
-Use this Python pattern with the deployed Tadforge API URL. Do not use `api_request`: it only supports API services registered by the agent platform, and the Tadforge MCP server is not such a service.
+Use Python only to inspect local files and encode one image at a time. Do not use `urllib`, `requests`, `api_request`, or any other HTTP client from `execute_code`; the code sandbox has no direct network access.
 
 ```python
 import base64
-import json
 import mimetypes
 import os
 import re
-import time
-import urllib.error
-import urllib.request
 
-api_base_url = "https://tadforge-mcp-server-979737143073.europe-west1.run.app/tadforge"
-brief_name = "tx-nurture-welcome"
 html_path = "/.ao/uploads/email.html"
 images_dir = "/.ao/uploads/images"
-
-def verify_service(max_attempts=4):
-    url = f"{api_base_url}/email-assets"
-    for attempt in range(1, max_attempts + 1):
-        try:
-            with urllib.request.urlopen(url, timeout=30) as response:
-                if 200 <= response.status < 500:
-                    print("Tadforge service is available.")
-                    return
-                reason = f"HTTP {response.status}"
-        except urllib.error.HTTPError as error:
-            if error.code == 405:
-                print("Tadforge service is available.")
-                return
-            if error.code < 500:
-                raise RuntimeError(f"Tadforge service check failed with HTTP {error.code}") from error
-            reason = f"HTTP {error.code}"
-        except (urllib.error.URLError, TimeoutError) as error:
-            reason = str(error)
-
-        if attempt == max_attempts:
-            raise RuntimeError(f"Tadforge service is unavailable after {max_attempts} attempts: {reason}")
-        delay = 2 ** (attempt - 1)
-        print(f"Tadforge service check failed ({reason}); retrying in {delay}s...")
-        time.sleep(delay)
-
-def post_json(path, payload, max_attempts=4):
-    request_body = json.dumps(payload).encode("utf-8")
-    for attempt in range(1, max_attempts + 1):
-        request = urllib.request.Request(
-            f"{api_base_url}{path}",
-            data=request_body,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(request, timeout=120) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except urllib.error.HTTPError as error:
-            details = error.read().decode("utf-8", errors="replace")
-            retryable = error.code == 429 or 500 <= error.code < 600
-            if not retryable or attempt == max_attempts:
-                raise RuntimeError(f"Tadforge API {error.code}: {details}") from error
-            reason = f"HTTP {error.code}"
-        except (urllib.error.URLError, TimeoutError) as error:
-            if attempt == max_attempts:
-                raise RuntimeError(f"Tadforge API connection failed after {max_attempts} attempts: {error}") from error
-            reason = str(error)
-
-        delay = 2 ** (attempt - 1)
-        print(f"Tadforge request failed ({reason}); retrying in {delay}s...")
-        time.sleep(delay)
-
-verify_service()
 
 with open(html_path, "r", encoding="utf-8") as source:
     html = source.read()
 
-assets = []
-for file_name in os.listdir(images_dir):
+referenced_images = []
+for file_name in sorted(os.listdir(images_dir)):
     if re.search(r"\s\(\d+\)(?=\.[^.]+$)", file_name, re.IGNORECASE):
         continue
     if file_name not in html and f"images/{file_name}" not in html:
         continue
-
-    file_path = os.path.join(images_dir, file_name)
     mime_type = mimetypes.guess_type(file_name)[0]
     if not mime_type or not mime_type.startswith("image/"):
         raise ValueError(f"Unsupported image type: {file_name}")
+    referenced_images.append({"fileName": file_name, "mimeType": mime_type})
 
-    with open(file_path, "rb") as image_file:
-        content_base64 = base64.b64encode(image_file.read()).decode("ascii")
+print(referenced_images)
 
-    uploaded = post_json("/email-assets", {
-        "briefName": brief_name,
-        "fileName": file_name,
-        "mimeType": mime_type,
-        "contentBase64": content_base64,
-    })
-    assets.append({
-        "fileName": uploaded["sourceFileName"],
-        "publishUrl": uploaded["publishUrl"],
-    })
-
-result = post_json("/email-content", {
-    "briefName": brief_name,
-    "html": html,
-    "assets": assets,
-})
-print(result)
+# Run this separately for one selected referenced image, then immediately pass
+# the output to one tadforge-upload-email-image MCP call. Do not encode a batch.
+file_name = referenced_images[0]["fileName"]
+file_path = os.path.join(images_dir, file_name)
+with open(file_path, "rb") as image_file:
+    print(base64.b64encode(image_file.read()).decode("ascii"))
 ```
 
-Each `/email-assets` request has this exact body:
+Each `tadforge-upload-email-image` call has this exact input shape:
 
 ```json
 {
@@ -202,11 +130,7 @@ For each image request:
 - `contentBase64` contains the complete file bytes encoded as Base64. Do not pass a local path, URL, JSON byte array, or a `data:image/...;base64,` prefix.
 - Include only unsuffixed images referenced by this HTML. Do not include `hero (1).jpg` or unrelated images.
 
-The server is remote and cannot read `.ao/uploads` directly. Python must read each local image and place its Base64 value in `contentBase64` for that image's request only. Do not print Base64 values or save a combined payload artifact.
-
-Before reading or uploading files, verify that the deployed service responds at `/email-assets`. A `GET` response with HTTP `405` is the expected healthy result because the endpoint only accepts `POST`. Retry service-check connection failures, timeouts, and HTTP `5xx` responses, then abort before processing files if the service remains unavailable.
-
-Retry upload connection failures, timeouts, HTTP `429`, and HTTP `5xx` responses. If any image still fails after the retries, let the exception stop the script. Do not catch the error and continue to `/email-content`, because that would create an incomplete template. HTTP `4xx` responses other than `429` are not retryable.
+The server is remote and cannot read `.ao/uploads` directly. Python must read each local image and provide its Base64 value for one direct MCP tool call. Do not save a combined payload artifact. If any upload tool call fails, stop and do not create the content template.
 
 The tool uploads referenced images to:
 
@@ -214,7 +138,16 @@ The tool uploads referenced images to:
 /content/dam/tadforge/briefs/{briefName}-images/
 ```
 
-The asset endpoint publishes each image and returns its AEM Publish URL. The final endpoint rewrites local HTML image references and creates the AJO email content template. Do not rewrite the HTML separately and do not call the generic content-template creation tool for the same email.
+After every image upload succeeds, build a compact substitutions JSON string from the tool responses:
+
+```json
+{
+  "hero.jpg": "https://publish.example/content/dam/tadforge/briefs/example-images/hero-ab12cd34.jpg",
+  "logo.png": "https://publish.example/content/dam/tadforge/briefs/example-images/logo-ef56ab78.png"
+}
+```
+
+Use each returned `sourceFileName` as the key and `publishUrl` as the value. Pass `json.dumps(substitutions)` as the `substitutions` string to `tadforge-create-content-template`, together with the same `briefName` and complete HTML. The tool rewrites local HTML image references, rejects unresolved images, and creates the AJO template. Do not rewrite the HTML separately and do not call the generic content-template creation tool for the same email.
 
 If one email fails, stop before creating or duplicating its campaign or journey target. Report successful templates separately from failed ones.
 
