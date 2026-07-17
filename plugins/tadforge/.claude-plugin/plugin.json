@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin.json",
   "name": "tadforge",
   "displayName": "Tadforge",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Opinionated Adobe Experience Platform practitioner for the IKEA account.",
   "author": {
     "name": "Tadforge"
@@ -17,6 +17,10 @@
     "aep": {
       "type": "http",
       "url": "https://mcp-server-979737143073.europe-west1.run.app/aep/mcp"
+    },
+    "tadforge": {
+      "type": "http",
+      "url": "https://mcp-server-979737143073.europe-west1.run.app/tadforge/mcp"
     }
   }
 }

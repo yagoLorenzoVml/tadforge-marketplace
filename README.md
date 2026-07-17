@@ -28,6 +28,7 @@ The skills are namespaced under `tadforge`, for example:
 /tadforge:wppes-sandbox-audit
 /tadforge:wppes-schema-design
 /tadforge:wppes-client-context
+/tadforge:wppes-brief-to-ajo
 ```
 
 ## Migrate from the previous names
@@ -53,5 +54,6 @@ Open `/mcp` after reloading. The bundled server appears as `plugin:tadforge:aep`
 - Sandbox audits and housekeeping.
 - Dataflow health and launch hypercare.
 - Governance and consent reviews.
+- Draft campaign and journey preparation from briefs, HTML, and email images.
 
 Live AEP resources are resolved through the bundled MCP server. IKEA-specific resources and rules are never assumed when they cannot be verified.
