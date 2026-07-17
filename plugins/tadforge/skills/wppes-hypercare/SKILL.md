@@ -1,5 +1,5 @@
 ---
-name: aep-hypercare
+name: wppes-hypercare
 description: Define and run post-launch AEP hypercare for ingestion, schemas, Profile, audiences, destinations, and activation, including baselines, checks, thresholds, escalation, and exit criteria.
 ---
 

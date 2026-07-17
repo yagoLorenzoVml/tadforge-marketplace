@@ -1,5 +1,5 @@
 ---
-name: aep-ecosystem-architecture
+name: wppes-ecosystem-architecture
 description: Map and assess IKEA's AEP ecosystem from sources through XDM, datasets, identity and Profile to audiences, destinations, consumers, governance, and operations.
 ---
 

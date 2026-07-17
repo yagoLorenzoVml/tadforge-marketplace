@@ -1,5 +1,5 @@
 ---
-name: aep-schema-design
+name: wppes-schema-design
 description: Design and review IKEA XDM schemas, field groups, descriptors, and datasets. Use for schema modeling, field mapping, compatibility, evolution, Profile enablement, or duplicate-model analysis.
 ---
 

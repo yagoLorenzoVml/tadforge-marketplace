@@ -1,5 +1,5 @@
 ---
-name: aep-use-case-brief
+name: wppes-use-case-brief
 description: Define or validate an IKEA AEP use-case brief covering business outcome, data, identity, Profile, audience, activation, governance, testing, and operations. Use when scoping a new use case or when requirements are incomplete.
 ---
 

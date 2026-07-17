@@ -1,5 +1,5 @@
 ---
-name: aep-sandbox-audit
+name: wppes-sandbox-audit
 description: Run a structured AEP sandbox audit across schemas, datasets, identities, Profile, audiences, sources, dataflows, destinations, governance, ownership, and operations. Use for workspace health checks and audits.
 ---
 

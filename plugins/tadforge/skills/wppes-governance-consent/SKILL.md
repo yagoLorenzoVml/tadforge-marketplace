@@ -1,5 +1,5 @@
 ---
-name: aep-governance-consent
+name: wppes-governance-consent
 description: Review AEP data governance, data usage labels, policies, consent, purpose, minimization, retention, residency, and activation enforcement for IKEA use cases.
 ---
 

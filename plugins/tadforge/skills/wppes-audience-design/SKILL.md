@@ -1,5 +1,5 @@
 ---
-name: aep-audience-design
+name: wppes-audience-design
 description: Design, validate, and troubleshoot AEP audiences for IKEA, including eligibility, temporal logic, exclusions, consent, evaluation, overlap, and activation readiness.
 ---
 

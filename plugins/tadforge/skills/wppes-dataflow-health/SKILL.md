@@ -1,5 +1,5 @@
 ---
-name: aep-dataflow-health
+name: wppes-dataflow-health
 description: Assess AEP source, ingestion, dataset, and dataflow health using run status, freshness, volume, errors, and downstream impact. Use for incidents, monitoring, failed ingestion, or operational reporting.
 ---
 

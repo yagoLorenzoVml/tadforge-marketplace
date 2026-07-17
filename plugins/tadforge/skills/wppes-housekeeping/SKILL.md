@@ -1,5 +1,5 @@
 ---
-name: aep-housekeeping
+name: wppes-housekeeping
 description: Identify duplicate, stale, unused, orphaned, unowned, or nonconforming AEP assets and propose a safe cleanup plan. Use for housekeeping, rationalization, lifecycle, or cost and clutter reduction.
 ---
 

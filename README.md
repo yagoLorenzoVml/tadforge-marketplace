@@ -25,9 +25,9 @@ From a Claude Code session, add this repository by absolute path:
 The skills are namespaced under `tadforge`, for example:
 
 ```text
-/tadforge:aep-sandbox-audit
-/tadforge:aep-schema-design
-/tadforge:aep-client-context
+/tadforge:wppes-sandbox-audit
+/tadforge:wppes-schema-design
+/tadforge:wppes-client-context
 ```
 
 ## Migrate from the previous names

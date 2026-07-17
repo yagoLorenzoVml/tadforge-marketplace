@@ -1,5 +1,5 @@
 ---
-name: aep-best-practices
+name: wppes-best-practices
 description: AEP delivery standards for sandboxes, XDM, ingestion, identities, Profile, audiences, destinations, governance, lifecycle, and operations. Use to design, review, critique, or explain what good looks like in Adobe Experience Platform.
 ---
 
