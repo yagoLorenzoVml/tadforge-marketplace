@@ -74,6 +74,31 @@ For each HTML file:
 5. Call `tadforge-create-email-content` once with `briefName`, `html`, and `images`.
 6. Record the exact returned `{ briefName, contentTemplateId }`.
 
+Pass the tool arguments using this exact structure:
+
+```json
+{
+  "briefName": "tx-nurture-welcome",
+  "html": "<html><body><img src=\"images/hero.jpg\"></body></html>",
+  "images": [
+    {
+      "fileName": "hero.jpg",
+      "mimeType": "image/jpeg",
+      "contentBase64": "/9j/4AAQSkZJRgABAQ..."
+    }
+  ]
+}
+```
+
+For every `images` entry:
+
+- `fileName` is the basename used by the HTML, such as `hero.jpg`; do not pass `.ao/uploads/images/hero.jpg` or `images/hero.jpg`.
+- `mimeType` is the corresponding image MIME type, such as `image/jpeg`, `image/png`, `image/gif`, `image/webp`, `image/avif`, or `image/svg+xml`.
+- `contentBase64` contains the complete file bytes encoded as Base64. Do not pass a local path, URL, JSON byte array, or a `data:image/...;base64,` prefix.
+- Include only unsuffixed images referenced by this HTML. Do not include `hero (1).jpg` or unrelated images.
+
+The MCP server is remote and cannot read `.ao/uploads` directly. The agent must read each local image and place its Base64 value in `contentBase64` before calling the tool.
+
 The tool uploads referenced images to:
 
 ```text
