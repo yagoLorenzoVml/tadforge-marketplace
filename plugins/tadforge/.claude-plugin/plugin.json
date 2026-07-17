@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "tadforge",
+  "displayName": "Tadforge",
+  "version": "0.2.0",
+  "description": "Opinionated Adobe Experience Platform practitioner for the IKEA account.",
+  "author": {
+    "name": "Tadforge"
+  },
+  "keywords": [
+    "aep",
+    "adobe-experience-platform",
+    "ikea"
+  ],
+  "skills": "./skills/",
+  "mcpServers": {
+    "aep": {
+      "type": "http",
+      "url": "https://mcp-server-979737143073.europe-west1.run.app/aep/mcp"
+    }
+  }
+}

@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "aep": {
-      "type": "http",
-      "url": "https://mcp-server-979737143073.europe-west1.run.app/aep/mcp"
-    }
-  }
-}

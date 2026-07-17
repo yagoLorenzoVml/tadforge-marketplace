@@ -1,14 +1,14 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
-  "name": "wppesmap",
+  "name": "tadforge",
   "owner": {
-    "name": "WPP ESMAP"
+    "name": "Tadforge"
   },
-  "description": "WPP ESMAP agents and tools.",
+  "description": "Tadforge Adobe Experience Platform tools.",
   "plugins": [
     {
-      "name": "manolo-agent",
-      "source": "./plugins/manolo-agent",
+      "name": "tadforge",
+      "source": "./plugins/tadforge",
       "description": "Opinionated Adobe Experience Platform practitioner for the IKEA account."
     }
   ]
