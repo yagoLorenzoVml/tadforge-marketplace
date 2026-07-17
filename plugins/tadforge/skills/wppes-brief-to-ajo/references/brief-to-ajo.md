@@ -84,27 +84,68 @@ import json
 import mimetypes
 import os
 import re
+import time
 import urllib.error
 import urllib.request
 
-api_base_url = "https://tadforge-mcp-server-ttzmuqtjma-ew.a.run.app/tadforge"
+api_base_url = "https://tadforge-mcp-server-979737143073.europe-west1.run.app/tadforge"
 brief_name = "tx-nurture-welcome"
 html_path = "/.ao/uploads/email.html"
 images_dir = "/.ao/uploads/images"
 
-def post_json(path, payload):
-    request = urllib.request.Request(
-        f"{api_base_url}{path}",
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=120) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as error:
-        details = error.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"Tadforge API {error.code}: {details}") from error
+def verify_service(max_attempts=4):
+    url = f"{api_base_url}/email-assets"
+    for attempt in range(1, max_attempts + 1):
+        try:
+            with urllib.request.urlopen(url, timeout=30) as response:
+                if 200 <= response.status < 500:
+                    print("Tadforge service is available.")
+                    return
+                reason = f"HTTP {response.status}"
+        except urllib.error.HTTPError as error:
+            if error.code == 405:
+                print("Tadforge service is available.")
+                return
+            if error.code < 500:
+                raise RuntimeError(f"Tadforge service check failed with HTTP {error.code}") from error
+            reason = f"HTTP {error.code}"
+        except (urllib.error.URLError, TimeoutError) as error:
+            reason = str(error)
+
+        if attempt == max_attempts:
+            raise RuntimeError(f"Tadforge service is unavailable after {max_attempts} attempts: {reason}")
+        delay = 2 ** (attempt - 1)
+        print(f"Tadforge service check failed ({reason}); retrying in {delay}s...")
+        time.sleep(delay)
+
+def post_json(path, payload, max_attempts=4):
+    request_body = json.dumps(payload).encode("utf-8")
+    for attempt in range(1, max_attempts + 1):
+        request = urllib.request.Request(
+            f"{api_base_url}{path}",
+            data=request_body,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=120) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as error:
+            details = error.read().decode("utf-8", errors="replace")
+            retryable = error.code == 429 or 500 <= error.code < 600
+            if not retryable or attempt == max_attempts:
+                raise RuntimeError(f"Tadforge API {error.code}: {details}") from error
+            reason = f"HTTP {error.code}"
+        except (urllib.error.URLError, TimeoutError) as error:
+            if attempt == max_attempts:
+                raise RuntimeError(f"Tadforge API connection failed after {max_attempts} attempts: {error}") from error
+            reason = str(error)
+
+        delay = 2 ** (attempt - 1)
+        print(f"Tadforge request failed ({reason}); retrying in {delay}s...")
+        time.sleep(delay)
+
+verify_service()
 
 with open(html_path, "r", encoding="utf-8") as source:
     html = source.read()
@@ -162,6 +203,10 @@ For each image request:
 - Include only unsuffixed images referenced by this HTML. Do not include `hero (1).jpg` or unrelated images.
 
 The server is remote and cannot read `.ao/uploads` directly. Python must read each local image and place its Base64 value in `contentBase64` for that image's request only. Do not print Base64 values or save a combined payload artifact.
+
+Before reading or uploading files, verify that the deployed service responds at `/email-assets`. A `GET` response with HTTP `405` is the expected healthy result because the endpoint only accepts `POST`. Retry service-check connection failures, timeouts, and HTTP `5xx` responses, then abort before processing files if the service remains unavailable.
+
+Retry upload connection failures, timeouts, HTTP `429`, and HTTP `5xx` responses. If any image still fails after the retries, let the exception stop the script. Do not catch the error and continue to `/email-content`, because that would create an incomplete template. HTTP `4xx` responses other than `429` are not retryable.
 
 The tool uploads referenced images to:
 
