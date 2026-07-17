@@ -184,7 +184,58 @@ Use the agent's existing AEP tools to:
 
 Never assume a content template ID is an action ID. If an existing campaign or journey tool requires an action ID or another identifier that cannot be derived through available tools, stop and report the exact missing capability instead of substituting the template ID.
 
-## 6. Report
+## 6. Offer source-file cleanup
+
+Offer cleanup only after all requested image uploads have succeeded, every requested email has returned a non-empty `contentTemplateId`, and any requested draft activation work has completed. If any operation failed or remains incomplete, do not offer or perform cleanup.
+
+Before deleting anything:
+
+1. List the exact brief files, HTML files, duplicate HTML copies, and `/.ao/uploads/images/` directory that will be removed.
+2. Ask the user explicitly whether those uploaded source files should be deleted.
+3. Wait for an unambiguous confirmation in a subsequent user message.
+
+Silence, prior approval to create the template, or a successful upload is not permission to delete files. If the user declines or does not answer, leave every file unchanged.
+
+After explicit confirmation, use Python to remove only the listed relevant sources:
+
+```python
+import os
+import shutil
+
+uploads_dir = "/.ao/uploads"
+files_to_delete = [
+    # Insert only the exact brief, HTML, and related duplicate HTML paths
+    # shown to and approved by the user.
+]
+images_dir = os.path.join(uploads_dir, "images")
+
+deleted = []
+failed = []
+
+for path in files_to_delete:
+    try:
+        os.remove(path)
+        deleted.append(path)
+    except FileNotFoundError:
+        failed.append({"path": path, "error": "not found"})
+    except Exception as error:
+        failed.append({"path": path, "error": f"{type(error).__name__}: {error}"})
+
+try:
+    shutil.rmtree(images_dir)
+    deleted.append(images_dir)
+except FileNotFoundError:
+    failed.append({"path": images_dir, "error": "not found"})
+except Exception as error:
+    failed.append({"path": images_dir, "error": f"{type(error).__name__}: {error}"})
+
+remaining = sorted(os.listdir(uploads_dir)) if os.path.isdir(uploads_dir) else []
+print({"deleted": deleted, "failed": failed, "remaining": remaining})
+```
+
+Do not delete the entire `/.ao/uploads/` directory. Do not use broad filename globs. Report deleted files, failures, and remaining entries after cleanup.
+
+## 7. Report
 
 Return a concise implementation report containing:
 

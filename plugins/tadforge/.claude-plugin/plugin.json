@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin.json",
   "name": "tadforge",
   "displayName": "Tadforge",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Opinionated Adobe Experience Platform practitioner for the IKEA account.",
   "author": {
     "name": "Tadforge"
