@@ -6,7 +6,7 @@
 - Validate organization and sandbox before relying on live AEP resources.
 - Create drafts only. Never activate, publish, or launch a journey or campaign.
 - Do not claim that a resource was created unless its tool returned an identifier.
-- Do not read, encode, upload, or print email HTML or image Base64 in the agent runtime. Content bundles stay in GCS and are processed by Tadforge.
+- Do not read, encode, upload, or print email HTML or image Base64 in the agent runtime. Content is processed by Tadforge.
 
 ## 1. Normalize the brief
 
@@ -45,24 +45,43 @@ Do not perform writes when `BLOCKED`. Ask only for the missing decision.
 
 ## 4. Create content templates
 
-For almost every brief_<id> found in the brief, choose a stable and descriptive template name. Then call the tool `tadforge-create-template-from-brief` exactly once per content reference:
+For every `brief_<id>` found in the brief, first call `tadforge-check-brief-exists`:
+
+```json
+{
+  "briefId": "12345"
+}
+```
+
+If it returns `exists: false`, mark that email action as `PENDING_CONTENT`. This is not a blocker for audience resolution or journey design. Continue all work that does not require a content template, do not ask for another brief ID, and do not describe storage implementation details.
+
+If it returns `exists: true`, choose a stable and descriptive template name and call `tadforge-create-template-from-brief` exactly once:
+
+```json
 {
   "briefId": "12345",
   "templateName": "tx-nurture-welcome"
 }
+```
+
 Record the returned result:
+
+```json
 {
   "briefId": "12345",
   "templateId": "...",
   "templateName": "tx-nurture-welcome",
   "reused": false
 }
-Use templateId when preparing the corresponding email action. The reused field indicates whether the tool reused an existing template.
-If the tool fails or does not return a non-empty templateId, stop before calling journey-create. Do not attempt to read, upload, rewrite, or recreate the underlying email files from the agent runtime.
+```
+
+Use `templateId` when preparing the corresponding email action. The `reused` field indicates whether the tool reused an existing template. If creation fails despite confirmed availability, mark that action as `CONTENT_ERROR` and continue reporting other resolved resources; do not attempt to recreate the content from the agent runtime.
 
 ## 5. Create the journey draft
 
-Load `journey-create` after all audiences and content templates are resolved. Give it the normalized requirements from the brief, including:
+Load `journey-create` only when every required email action has a non-empty `templateId`. If any action is `PENDING_CONTENT` or `CONTENT_ERROR`, finish audience work and journey design, report the pending actions, and defer creation of the journey draft.
+
+When content is complete, give `journey-create` the normalized requirements from the brief, including:
 
 - Reused or created audience IDs and exclusions.
 - Trigger, entry, waits, conditions, exits, schedule, timezone, recurrence, and re-entry settings.
@@ -78,7 +97,8 @@ Return a concise report containing:
 - Readiness status and material assumptions.
 - Audience IDs reused or created, with rationale.
 - One `{ briefId, templateId, templateName, reused }` entry per content bundle.
+- Every `PENDING_CONTENT` or `CONTENT_ERROR` action without classifying the whole request as blocked.
 - Returned journey or campaign draft identifiers.
 - Failed or skipped operations, warnings, and manual steps before activation.
 
-Do not include email HTML, image Base64, GCS object bytes, secrets, or personal data.
+Do not include email HTML, image Base64, content bytes, secrets, or personal data.

@@ -5,4 +5,4 @@ description: Build draft AEP or Adobe Journey Optimizer campaigns and journeys f
 
 # Brief to AJO
 
-Use [`references/brief-to-ajo.md`](references/brief-to-ajo.md). Read the supplied brief, resolve or create its audiences with `audience-creation-flow`, create AJO content templates from each referenced GCS brief ZIP with `tadforge-create-template-from-brief`, then use `journey-create` for journey drafts. Create drafts only; never activate or publish a journey.
+Use [`references/brief-to-ajo.md`](references/brief-to-ajo.md). Read the supplied brief, resolve or create its audiences with `audience-creation-flow`, check each content reference and create available AJO templates with the Tadforge tools, then use `journey-create` for complete journey drafts. Create drafts only; never activate or publish a journey.
