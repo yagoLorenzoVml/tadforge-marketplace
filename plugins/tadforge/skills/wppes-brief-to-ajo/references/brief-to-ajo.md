@@ -45,34 +45,20 @@ Do not perform writes when `BLOCKED`. Ask only for the missing decision.
 
 ## 4. Create content templates
 
-For every `brief_<id>` found in the brief, call `tadforge-create-template-from-brief` exactly once with the normalized ID and chosen template name:
-
-```json
+For almost every brief_<id> found in the brief, choose a stable and descriptive template name. Then call the tool `tadforge-create-template-from-brief` exactly once per content reference:
 {
   "briefId": "12345",
   "templateName": "tx-nurture-welcome"
 }
-```
-
-The tool resolves one of these root-level GCS objects from `gs://wppesmap-tad-briefs/`:
-
-```text
-12345.zip
-brief_12345.zip
-```
-
-The ZIP must contain exactly one root HTML file and an `images/` directory. The tool uploads only referenced images to AEM, rewrites the HTML with AEM Publish URLs, and creates the AJO email content template. It returns:
-
-```json
+Record the returned result:
 {
   "briefId": "12345",
   "templateId": "...",
   "templateName": "tx-nurture-welcome",
   "reused": false
 }
-```
-
-If exactly one AJO content template already has `templateName`, the tool returns it with `reused: true` without loading GCS. If the tool reports an error, stop; do not create a journey with incomplete content.
+Use templateId when preparing the corresponding email action. The reused field indicates whether the tool reused an existing template.
+If the tool fails or does not return a non-empty templateId, stop before calling journey-create. Do not attempt to read, upload, rewrite, or recreate the underlying email files from the agent runtime.
 
 ## 5. Create the journey draft
 
