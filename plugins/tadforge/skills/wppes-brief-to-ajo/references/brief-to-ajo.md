@@ -88,9 +88,9 @@ When content is complete, give `journey-create` the normalized journey structure
 - Trigger, entry, waits, conditions, exits, schedule, timezone, recurrence, and re-entry settings.
 - Sender, subject, localization, personalization fallback, consent, suppression, unsubscribe, and legal constraints.
 
-Create only a draft. Do not put a `templateId` into `surfaceId` or `messageId`. Record the returned `journeyVersionId` and the `nodeId` of every email campaign action.
+Create only a draft. Do not put a `templateId` into `surfaceId` or `messageId`. Record the returned `journeyVersionId` and the graph `nodeId` of every email, push, or SMS campaign action. The graph `nodeId` is not the node's `actionUID`; never substitute one for the other.
 
-After `journey-create` succeeds, call `tadforge-bind-template-to-journey-email` once per email node:
+After `journey-create` succeeds, call `tadforge-bind-template-to-journey-action` once per supported channel node:
 
 ```json
 {
@@ -98,11 +98,14 @@ After `journey-create` succeeds, call `tadforge-bind-template-to-journey-email` 
   "journeyVersionId": "...",
   "nodeId": "...",
   "templateId": "...",
-  "subject": "Welcome"
+  "subject": "Welcome",
+  "surfaceId": "optional-surface-override"
 }
 ```
 
-The tool applies the content to the inline email message, binds the message and channel surface IDs to the node, saves the draft, and verifies the result. Consider an email action complete only when the response contains both `bound: true` and `verified: true`. Otherwise mark it `PENDING_CONTENT_BINDING` and never publish the journey.
+The tool reads the node's channel instead of relying on the agent to declare it. It supports email, push, and SMS when the content template is compatible. It provisions a missing inline campaign, applies content to the channel variant, binds the real message and surface IDs, saves the draft, and verifies the result. `subject` is required for HTML email templates that do not already include one. Pass `surfaceId` only to select an explicit channel configuration; if omitted, automatic selection succeeds only when exactly one active compatible surface exists.
+
+Consider an action complete only when the response contains both `bound: true` and `verified: true`. Otherwise mark it `PENDING_CONTENT_BINDING` and never publish the journey. Do not retry with `actionUID`, the master journey ID, or guessed IDs.
 
 ## 6. Report
 
@@ -113,7 +116,7 @@ Return a concise report containing:
 - One `{ briefId, templateId, templateName, reused }` entry per content bundle.
 - Every `PENDING_CONTENT` or `CONTENT_ERROR` action without classifying the whole request as blocked.
 - Returned journey or campaign draft identifiers.
-- One binding result per email node, including `campaignId`, `messageId`, `surfaceId`, `bound`, and `verified`.
+- One binding result per channel action, including `channel`, `campaignId`, `messageId`, `surfaceId`, `bound`, and `verified`.
 - Failed or skipped operations, warnings, and manual steps before activation.
 
 Do not include email HTML, image Base64, content bytes, secrets, or personal data.
