@@ -59,6 +59,7 @@ If it returns `exists: true`, choose a stable and descriptive template name and 
 
 ```json
 {
+  "sandbox": "aepenablementfy21",
   "briefId": "12345",
   "templateName": "tx-nurture-welcome"
 }
@@ -75,20 +76,33 @@ Record the returned result:
 }
 ```
 
-Use `templateId` when preparing the corresponding email action. The `reused` field indicates whether the tool reused an existing template. If creation fails despite confirmed availability, mark that action as `CONTENT_ERROR` and continue reporting other resolved resources; do not attempt to recreate the content from the agent runtime.
+Keep `templateId` for the binding phase after journey creation; do not place it in `surfaceId`, `messageId`, or an undocumented journey node field. The `reused` field indicates whether the tool reused an existing template. If creation fails despite confirmed availability, mark that action as `CONTENT_ERROR` and continue reporting other resolved resources; do not attempt to recreate the content from the agent runtime.
 
 ## 5. Create the journey draft
 
 Load `journey-create` only when every required email action has a non-empty `templateId`. If any action is `PENDING_CONTENT` or `CONTENT_ERROR`, finish audience work and journey design, report the pending actions, and defer creation of the journey draft.
 
-When content is complete, give `journey-create` the normalized requirements from the brief, including:
+When content is complete, give `journey-create` the normalized journey structure, including:
 
 - Reused or created audience IDs and exclusions.
 - Trigger, entry, waits, conditions, exits, schedule, timezone, recurrence, and re-entry settings.
-- The returned AJO `templateId` for each email action.
 - Sender, subject, localization, personalization fallback, consent, suppression, unsubscribe, and legal constraints.
 
-Create only a draft. If `journey-create` requires an unsupported identifier or capability, stop and report the exact missing contract. Never substitute a content template ID for another identifier without that tool explicitly accepting it.
+Create only a draft. Do not put a `templateId` into `surfaceId` or `messageId`. Record the returned `journeyVersionId` and the `nodeId` of every email campaign action.
+
+After `journey-create` succeeds, call `tadforge-bind-template-to-journey-email` once per email node:
+
+```json
+{
+  "sandbox": "aepenablementfy21",
+  "journeyVersionId": "...",
+  "nodeId": "...",
+  "templateId": "...",
+  "subject": "Welcome"
+}
+```
+
+The tool applies the content to the inline email message, binds the message and channel surface IDs to the node, saves the draft, and verifies the result. Consider an email action complete only when the response contains both `bound: true` and `verified: true`. Otherwise mark it `PENDING_CONTENT_BINDING` and never publish the journey.
 
 ## 6. Report
 
@@ -99,6 +113,7 @@ Return a concise report containing:
 - One `{ briefId, templateId, templateName, reused }` entry per content bundle.
 - Every `PENDING_CONTENT` or `CONTENT_ERROR` action without classifying the whole request as blocked.
 - Returned journey or campaign draft identifiers.
+- One binding result per email node, including `campaignId`, `messageId`, `surfaceId`, `bound`, and `verified`.
 - Failed or skipped operations, warnings, and manual steps before activation.
 
 Do not include email HTML, image Base64, content bytes, secrets, or personal data.
